@@ -147,3 +147,8 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
+
+# EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"   
+DEFAULT_FROM_EMAIL = "no-reply@example.com"
+FRONTEND_URL = ""       
+PASSWORD_RESET_TIMEOUT = 60 * 60             

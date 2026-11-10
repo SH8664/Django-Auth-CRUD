@@ -13,6 +13,7 @@ class Project(models.Model):
     status = models.CharField(max_length=10,choices=Status_Options,default='active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -25,7 +26,9 @@ class Project(models.Model):
         return self.name
 
 class Task(models.Model):
-    Status_Options = [('Todo','todo'),('In Progress','in_progress'),('Done','done')]
+    Status_Options = [ ("todo", "Todo"),                 # (stored value, label)
+    ("in_progress", "In Progress"),
+    ("done", "Done"),]
     Priority_Options = [('Low','low'),('Medium','medium'),('High','high')]
 
     project = models.ForeignKey(Project,on_delete=models.CASCADE)
@@ -36,7 +39,8 @@ class Task(models.Model):
     due_date = models.DateTimeField(null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    is_deleted = models.BooleanField(default=False)
+    
     def __str__(self):
         return self.title
 

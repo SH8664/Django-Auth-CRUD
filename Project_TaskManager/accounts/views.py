@@ -2,11 +2,15 @@ from django.shortcuts import render
 from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from .serializers import RegisterSerializer , LoginSerializer , ProfileSerializer , ChangePasswordSerializer
+from .serializers import *
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
-
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.conf import settings
 # Create your views here.
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
@@ -105,8 +109,39 @@ def change_password(request):
     user.save()
     return Response({"message": "Password changed successfully."},
                     status=status.HTTP_200_OK)
-def password_reset():
-    pass
 
-def password_reset_confirm():
-    pass
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def password_reset(request):
+    serializer = PasswordResetSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    email = serializer.validated_data['email']
+
+    user = CustomUser.objects.filter(email=email).first()
+    if user:
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        link = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
+        send_mail(
+            "Task Management App - Reset your password",
+            f"Hi {user.get_username()},\n\n"
+                            f"Use this link to reset your password:\n{link}\n\n"
+                            f"uid: {uid}\ntoken: {token}\n\n"
+                            "If you didn't request this, ignore this email.",
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+        )
+
+    return Response({"message": "Password reset link sent to your email."}, status=status.HTTP_200_OK)
+    
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def password_reset_confirm(request):
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    user = serializer.validated_data["user"]
+    user.set_password(serializer.validated_data["new_password"])    
+    user.save(update_fields=["password"])
+    return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
